@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Black-Box Exam</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&display=swap');
+  :root{--bg:#070707;--bg2:#0d0d0d;--ink:#f2f2f2;--dim:#8a8a8a;--line:#2a2a2a;}
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'JetBrains Mono',monospace;
+       padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);}
+  .capsule{position:absolute;width:420px;height:140px;border-radius:70px;
+    background-image:radial-gradient(circle,#fff 1.6px,transparent 1.6px);background-size:9px 9px;
+    -webkit-mask-image:linear-gradient(115deg,#000 15%,transparent 75%);mask-image:linear-gradient(115deg,#000 15%,transparent 75%);
+    opacity:.5;pointer-events:none;}
+  .capsule.top{top:-40px;left:-120px;transform:rotate(-28deg);}
+  nav{display:flex;justify-content:space-between;align-items:center;padding:18px 32px;border-bottom:1px solid var(--line);position:relative;z-index:2;}
+  .brand{font-weight:800;font-size:18px;}
+  .brand span{color:var(--dim);font-weight:500;}
+  main{position:relative;max-width:680px;margin:0 auto;padding:56px 24px;min-height:70vh;}
+  h1{font-size:40px;margin:0 0 8px;font-weight:800;}
+  .sub{color:var(--dim);font-size:14px;margin-bottom:28px;}
+  ul.list{list-style:none;padding:0;margin:0 0 30px;display:flex;flex-direction:column;gap:10px;font-size:14px;}
+  ul.list li{display:flex;gap:10px;}
+  .ok{color:var(--dim);}
+  button{font-family:inherit;font-weight:700;font-size:14px;padding:14px 22px;border-radius:8px;
+    border:1px solid var(--line);cursor:pointer;background:transparent;color:var(--ink);}
+  button.primary{background:#fff;color:#0a0a0a;border-color:#fff;}
+  button:disabled{opacity:.4;cursor:default;}
+  .hidden{display:none;}
+  .panel{border:1px solid var(--line);border-radius:10px;background:var(--bg2);padding:26px;}
+  .qmeta{color:var(--dim);font-size:13px;margin-bottom:10px;}
+  .qtext{font-size:17px;font-weight:600;margin-bottom:18px;line-height:1.5;}
+  .opt{display:block;width:100%;text-align:left;margin-bottom:10px;padding:13px 16px;}
+  .opt.selected{border-color:#fff;background:#161616;}
+  .cmdrow{display:flex;gap:10px;align-items:center;margin-bottom:6px;}
+  .cmdrow span{color:var(--dim);}
+  input[type=text]{flex:1;background:#101010;border:1px solid var(--line);color:var(--ink);
+    padding:12px 14px;border-radius:6px;font-family:inherit;font-size:14px;outline:none;}
+  input[type=text]:focus{border-color:#555;}
+  .hint{color:var(--dim);font-size:12px;margin-top:8px;}
+  .navrow{display:flex;justify-content:space-between;margin-top:22px;}
+  .scoreline{font-size:40px;font-weight:800;margin-bottom:6px;}
+  .verdict{font-size:16px;margin-bottom:20px;}
+  .verdict.pass{color:#9ee493;}
+  .verdict.fail{color:#ff8a8a;}
+  .review{border-top:1px solid var(--line);margin-top:20px;padding-top:16px;font-size:13px;color:var(--dim);}
+  .review .row{margin-bottom:8px;}
+  .review b{color:var(--ink);}
+  footer{border-top:1px solid var(--line);padding:14px 28px;font-size:13px;color:var(--dim);text-align:center;}
+</style>
+</head>
+<body>
+<div class="capsule top"></div>
+<nav>
+  <div class="brand">Black-Box <span>exam</span></div>
+  <div style="color:var(--dim);font-size:13px;">client-side only &middot; no accounts</div>
+</nav>
+
+<main>
+  <div id="intro">
+    <h1>Pentesting qualifying exam</h1>
+    <div class="sub">10 random questions on penetration testing methodology and the Linux commands used in recon/enumeration. 6:00 on the clock — it auto-submits whatever you've answered when time runs out.</div>
+    <ul class="list">
+      <li><span class="ok">[x]</span> Methodology + command-entry questions, pentesting only</li>
+      <li><span class="ok">[x]</span> New random set every attempt</li>
+      <li><span class="ok">[x]</span> Scored and explained locally — nothing is sent anywhere</li>
+    </ul>
+    <button class="primary" id="startBtn">Start exam</button>
+  </div>
+
+  <div id="examView" class="hidden">
+    <div class="panel">
+      <div class="qmeta">
+        <span id="qLabel"></span>
+        <span id="stopwatch" style="float:right;color:var(--ink);font-weight:700;">00:00</span>
+      </div>
+      <div class="qtext" id="qtext"></div>
+      <div id="qbody"></div>
+      <div class="navrow">
+        <button id="backBtn">Back</button>
+        <button class="primary" id="nextBtn">Next</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="resultView" class="hidden">
+    <div class="panel">
+      <div class="scoreline" id="scoreline"></div>
+      <div class="sub" id="timeTaken" style="margin:0 0 14px;"></div>
+      <div class="verdict" id="verdict"></div>
+      <div class="review" id="review"></div>
+      <button id="retryBtn" style="margin-top:20px;">Retake with new questions</button>
+    </div>
+  </div>
+</main>
+<footer>Black-Box &middot; a practice exam, run entirely in your browser</footer>
+
+<script>
+(function(){
+  const BANK = [
+    {type:'mc', q:'In a standard pentest methodology, which phase comes immediately after reconnaissance?',
+     opts:['Reporting','Scanning / enumeration','Post-exploitation','Cleanup'], a:1,
+     exp:'The typical flow is recon → scanning/enumeration → exploitation → post-exploitation → reporting.'},
+    {type:'mc', q:'What is the main difference between a TCP SYN scan and a TCP connect scan?',
+     opts:['SYN scan never touches the target','SYN scan does not complete the full handshake, making it quieter/faster','Connect scan only works on UDP','There is no difference'], a:1,
+     exp:'A SYN scan sends SYN and reads the response without finishing the handshake (half-open), while a connect scan completes it via the OS socket API.'},
+    {type:'mc', q:'Which term describes gathering information about a target using only publicly available sources?',
+     opts:['OSINT','Brute forcing','Privilege escalation','Lateral movement'], a:0,
+     exp:'OSINT (Open-Source Intelligence) means collecting data from public sources — no direct interaction with the target required.'},
+    {type:'mc', q:'What does CVSS score primarily communicate about a vulnerability?',
+     opts:['Its exact patch date','Its relative severity/impact','Its country of origin','Its file size'], a:1,
+     exp:'The Common Vulnerability Scoring System rates how severe a vulnerability is, from 0.0 to 10.0.'},
+    {type:'mc', q:'In a pentest engagement, what is a "rules of engagement" (RoE) document for?',
+     opts:['Marketing material','Defines authorized scope, timing, and methods before testing begins','A post-report invoice','A list of CVEs'], a:1,
+     exp:'RoE sets the legal and technical boundaries of a test — what can be touched, when, and how — agreed before any testing starts.'},
+    {type:'mc', q:'Which of these best describes "privilege escalation"?',
+     opts:['Encrypting a disk','Gaining higher-level access than originally granted on a system','Deleting log files','Scanning open ports'], a:1,
+     exp:'Privilege escalation is moving from a lower-privileged account/process to a higher one (e.g. user to root/admin).'},
+    {type:'mc', q:'What is the purpose of enumeration in a pentest?',
+     opts:['Writing the final report','Actively extracting detailed info — users, shares, services — from a target already identified as reachable','Scanning random IP ranges','Deleting evidence'], a:1,
+     exp:'Enumeration digs deeper into a known-live target (service versions, usernames, shares, etc.) to find usable attack surface.'},
+    {type:'mc', q:'Which tool is primarily used for intercepting and manipulating HTTP traffic during web app testing?',
+     opts:['Burp Suite','VLC','Notepad','Excel'], a:0, exp:'Burp Suite is a standard proxy for inspecting and modifying HTTP requests/responses in web app testing.'},
+    {type:'mc', q:'What does "least privilege" mean as a security principle?',
+     opts:['Give every account admin rights by default','Give accounts only the access they need to do their job, nothing more','Disable all accounts','Use the shortest possible passwords'], a:1,
+     exp:'Least privilege limits each account/process to the minimum access required, reducing blast radius if compromised.'},
+    {type:'mc', q:'In a report, what does a "false positive" mean?',
+     opts:['A real, confirmed vulnerability','A finding that scanning tools flagged but is not actually exploitable/present','An encrypted finding','A critical zero-day'], a:1,
+     exp:'A false positive is a flagged issue that turns out not to be real or exploitable on manual verification.'},
+    {type:'cmd', q:'Write the Linux command to perform a basic Nmap service-version scan against a host at 10.10.10.5.',
+     check:/^nmap\s+-sV\s+10\.10\.10\.5$/, exp:'nmap -sV 10.10.10.5 probes open ports to determine service and version info.'},
+    {type:'cmd', q:'Write the Linux command to scan all 65535 TCP ports on a target at 10.10.10.5.',
+     check:/^nmap\s+-p-\s+10\.10\.10\.5$/, exp:'nmap -p- 10.10.10.5 scans the full TCP port range instead of the default top 1000.'},
+    {type:'cmd', q:'Write the Linux command to show your current user and group identity.',
+     check:/^id\s*$/, exp:'id prints the effective user ID, group ID, and group memberships — a standard first recon command after gaining a shell.'},
+    {type:'cmd', q:'Write the Linux command to list all SUID binaries on the filesystem, suppressing permission-denied errors.',
+     check:/^find\s+\/\s+-perm\s+-4000\s+2>\/dev\/null$/, exp:'find / -perm -4000 2>/dev/null hunts for SUID binaries, a common privilege-escalation check.'},
+    {type:'cmd', q:'Write the Linux command to grab the HTTP response headers only (no body) from http://target.local.',
+     check:/^curl\s+-I\s+http:\/\/target\.local$/, exp:'curl -I sends a HEAD-style request and prints just the headers — used for banner grabbing/fingerprinting.'},
+    {type:'cmd', q:'Write the Linux command to search recursively for the string "password" inside all files under /var/www.',
+     check:/^grep\s+-r\s+"?password"?\s+\/var\/www$/, exp:'grep -r "password" /var/www recursively searches files for that string, useful when hunting for hardcoded credentials.'},
+    {type:'cmd', q:'Write the Linux command to list all currently listening TCP/UDP ports along with the owning process.',
+     check:/^(sudo\s+)?(ss|netstat)\s+-(tulpn|tlnp|lntp|lnpt)\b/, exp:'ss -tulpn (or netstat -tulpn) shows listening sockets and the process bound to each — key for service enumeration.'},
+    {type:'cmd', q:'Write the Linux command to display the contents of /etc/passwd.',
+     check:/^cat\s+\/etc\/passwd$/, exp:'cat /etc/passwd lists system accounts — a routine enumeration step after local access.'}
+  ];
+
+  const PASS_PCT = 70;
+  let pool = [], idx = 0, answers = [];
+  const TIME_LIMIT_SEC = 360; // 6:00
+  let startTime = null, timerHandle = null, elapsedFinal = null, timedOut = false;
+
+  function fmtTime(ms){
+    const total = Math.max(0, Math.floor(ms/1000));
+    const m = String(Math.floor(total/60)).padStart(2,'0');
+    const s = String(total%60).padStart(2,'0');
+    return m + ':' + s;
+  }
+  function tickTimer(){
+    const remainingMs = (TIME_LIMIT_SEC*1000) - (Date.now() - startTime);
+    if(remainingMs <= 0){
+      stopwatchEl.textContent = '00:00';
+      clearInterval(timerHandle);
+      timedOut = true;
+      finishExam();
+      return;
+    }
+    stopwatchEl.textContent = fmtTime(remainingMs);
+    if(remainingMs <= 30000) stopwatchEl.style.color = '#ff8a8a';
+  }
+  function startTimer(){
+    startTime = Date.now();
+    timedOut = false;
+    stopwatchEl.style.color = '';
+    stopwatchEl.textContent = fmtTime(TIME_LIMIT_SEC*1000);
+    if(timerHandle) clearInterval(timerHandle);
+    timerHandle = setInterval(tickTimer, 1000);
+  }
+  function stopTimer(){
+    if(timerHandle) clearInterval(timerHandle);
+    elapsedFinal = Date.now() - startTime;
+  }
+
+  const introEl = document.getElementById('intro');
+  const examEl = document.getElementById('examView');
+  const resultEl = document.getElementById('resultView');
+  const qLabel = document.getElementById('qLabel');
+  const stopwatchEl = document.getElementById('stopwatch');
+  const qtext = document.getElementById('qtext');
+  const qbody = document.getElementById('qbody');
+  const backBtn = document.getElementById('backBtn');
+  const nextBtn = document.getElementById('nextBtn');
+
+  function shuffle(arr){ return arr.map(v=>[Math.random(),v]).sort((a,b)=>a[0]-b[0]).map(x=>x[1]); }
+
+  function startExam(){
+    pool = shuffle(BANK).slice(0, 10);
+    idx = 0;
+    answers = new Array(pool.length).fill(null);
+    introEl.classList.add('hidden');
+    resultEl.classList.add('hidden');
+    examEl.classList.remove('hidden');
+    startTimer();
+    renderQ();
+  }
+
+  function renderQ(){
+    const q = pool[idx];
+    qLabel.textContent = 'Question ' + (idx+1) + ' of ' + pool.length;
+    qtext.textContent = q.q;
+    qbody.innerHTML = '';
+
+    if(q.type === 'mc'){
+      q.opts.forEach((opt, i) => {
+        const b = document.createElement('button');
+        b.textContent = opt;
+        b.className = 'opt' + (answers[idx] === i ? ' selected' : '');
+        b.style.display = 'block';
+        b.onclick = () => { answers[idx] = i; renderQ(); };
+        qbody.appendChild(b);
+      });
+    } else {
+      const row = document.createElement('div');
+      row.className = 'cmdrow';
+      row.innerHTML = '<span>$</span>';
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.placeholder = 'type the command';
+      input.value = answers[idx] || '';
+      input.oninput = () => { answers[idx] = input.value; };
+      row.appendChild(input);
+      qbody.appendChild(row);
+      const hint = document.createElement('div');
+      hint.className = 'hint';
+      hint.textContent = 'Exact flags matter less than intent — spacing is normalized before checking.';
+      qbody.appendChild(hint);
+    }
+    backBtn.disabled = idx === 0;
+    nextBtn.textContent = idx === pool.length - 1 ? 'Submit exam' : 'Next';
+  }
+
+  backBtn.onclick = () => { if(idx > 0){ idx--; renderQ(); } };
+  nextBtn.onclick = () => {
+    if(idx < pool.length - 1){ idx++; renderQ(); }
+    else { finishExam(); }
+  };
+  document.getElementById('startBtn').onclick = startExam;
+  document.getElementById('retryBtn').onclick = startExam;
+
+  function norm(s){ return (s||'').trim().replace(/\s+/g,' '); }
+
+  function finishExam(){
+    stopTimer();
+    let correct = 0;
+    const rows = [];
+    pool.forEach((q, i) => {
+      let ok;
+      if(q.type === 'mc'){
+        ok = answers[i] === q.a;
+      } else {
+        ok = q.check.test(norm(answers[i]));
+      }
+      if(ok) correct++;
+      rows.push({q, ok, given: q.type==='mc' ? (answers[i]!=null? q.opts[answers[i]] : '(no answer)') : (answers[i]||'(no answer)')});
+    });
+
+    const pct = Math.round((correct / pool.length) * 100);
+    examEl.classList.add('hidden');
+    resultEl.classList.remove('hidden');
+    document.getElementById('scoreline').textContent = correct + ' / ' + pool.length + '  (' + pct + '%)';
+    document.getElementById('timeTaken').textContent = (timedOut ? 'Time ran out — ' : 'Time taken: ') + fmtTime(elapsedFinal) + (timedOut ? ' (auto-submitted)' : '');
+    const v = document.getElementById('verdict');
+    if(pct >= PASS_PCT){ v.textContent = 'Pass'; v.className = 'verdict pass'; }
+    else { v.textContent = 'Not yet — review below and try again'; v.className = 'verdict fail'; }
+
+    const rev = document.getElementById('review');
+    rev.innerHTML = '';
+    rows.forEach((r, i) => {
+      const d = document.createElement('div');
+      d.className = 'row';
+      d.innerHTML = '<b>' + (i+1) + '. ' + (r.ok ? '✓' : '✘') + '</b> ' + r.q.q +
+        '<br>Your answer: ' + r.given + (r.ok ? '' : '<br>Explanation: ' + r.q.exp);
+      rev.appendChild(d);
+    });
+  }
+})();
+</script>
+</body>
+</html>
