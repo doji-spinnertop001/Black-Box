@@ -60,10 +60,10 @@
 
 <main>
   <div id="intro">
-    <h1>Pentesting qualifying exam</h1>
-    <div class="sub">10 random questions on penetration testing methodology and the Linux commands used in recon/enumeration. 6:00 on the clock — it auto-submits whatever you've answered when time runs out.</div>
+    <h1>Nmap &amp; dirb qualifying exam</h1>
+    <div class="sub">10 random questions, all on Nmap scanning and dirb directory brute-forcing — flags, behavior, and writing the commands yourself. 6:00 on the clock — it auto-submits whatever you've answered when time runs out.</div>
     <ul class="list">
-      <li><span class="ok">[x]</span> Methodology + command-entry questions, pentesting only</li>
+      <li><span class="ok">[x]</span> Multiple choice + command-entry, Nmap and dirb only</li>
       <li><span class="ok">[x]</span> New random set every attempt</li>
       <li><span class="ok">[x]</span> Scored and explained locally — nothing is sent anywhere</li>
     </ul>
@@ -100,51 +100,49 @@
 <script>
 (function(){
   const BANK = [
-    {type:'mc', q:'In a standard pentest methodology, which phase comes immediately after reconnaissance?',
-     opts:['Reporting','Scanning / enumeration','Post-exploitation','Cleanup'], a:1,
-     exp:'The typical flow is recon → scanning/enumeration → exploitation → post-exploitation → reporting.'},
-    {type:'mc', q:'What is the main difference between a TCP SYN scan and a TCP connect scan?',
-     opts:['SYN scan never touches the target','SYN scan does not complete the full handshake, making it quieter/faster','Connect scan only works on UDP','There is no difference'], a:1,
-     exp:'A SYN scan sends SYN and reads the response without finishing the handshake (half-open), while a connect scan completes it via the OS socket API.'},
-    {type:'mc', q:'Which term describes gathering information about a target using only publicly available sources?',
-     opts:['OSINT','Brute forcing','Privilege escalation','Lateral movement'], a:0,
-     exp:'OSINT (Open-Source Intelligence) means collecting data from public sources — no direct interaction with the target required.'},
-    {type:'mc', q:'What does CVSS score primarily communicate about a vulnerability?',
-     opts:['Its exact patch date','Its relative severity/impact','Its country of origin','Its file size'], a:1,
-     exp:'The Common Vulnerability Scoring System rates how severe a vulnerability is, from 0.0 to 10.0.'},
-    {type:'mc', q:'In a pentest engagement, what is a "rules of engagement" (RoE) document for?',
-     opts:['Marketing material','Defines authorized scope, timing, and methods before testing begins','A post-report invoice','A list of CVEs'], a:1,
-     exp:'RoE sets the legal and technical boundaries of a test — what can be touched, when, and how — agreed before any testing starts.'},
-    {type:'mc', q:'Which of these best describes "privilege escalation"?',
-     opts:['Encrypting a disk','Gaining higher-level access than originally granted on a system','Deleting log files','Scanning open ports'], a:1,
-     exp:'Privilege escalation is moving from a lower-privileged account/process to a higher one (e.g. user to root/admin).'},
-    {type:'mc', q:'What is the purpose of enumeration in a pentest?',
-     opts:['Writing the final report','Actively extracting detailed info — users, shares, services — from a target already identified as reachable','Scanning random IP ranges','Deleting evidence'], a:1,
-     exp:'Enumeration digs deeper into a known-live target (service versions, usernames, shares, etc.) to find usable attack surface.'},
-    {type:'mc', q:'Which tool is primarily used for intercepting and manipulating HTTP traffic during web app testing?',
-     opts:['Burp Suite','VLC','Notepad','Excel'], a:0, exp:'Burp Suite is a standard proxy for inspecting and modifying HTTP requests/responses in web app testing.'},
-    {type:'mc', q:'What does "least privilege" mean as a security principle?',
-     opts:['Give every account admin rights by default','Give accounts only the access they need to do their job, nothing more','Disable all accounts','Use the shortest possible passwords'], a:1,
-     exp:'Least privilege limits each account/process to the minimum access required, reducing blast radius if compromised.'},
-    {type:'mc', q:'In a report, what does a "false positive" mean?',
-     opts:['A real, confirmed vulnerability','A finding that scanning tools flagged but is not actually exploitable/present','An encrypted finding','A critical zero-day'], a:1,
-     exp:'A false positive is a flagged issue that turns out not to be real or exploitable on manual verification.'},
-    {type:'cmd', q:'Write the Linux command to perform a basic Nmap service-version scan against a host at 10.10.10.5.',
+    {type:'mc', q:'What is the main difference between an Nmap SYN scan (-sS) and a connect scan (-sT)?',
+     opts:['-sS never sends any packets','-sS does not complete the full TCP handshake, making it quieter/faster','-sT only works on UDP','There is no difference'], a:1,
+     exp:'-sS sends SYN and reads the reply without finishing the handshake (half-open); -sT completes it through the OS socket API, which is slower and more easily logged.'},
+    {type:'mc', q:'Which Nmap flag enables service/version detection on open ports?',
+     opts:['-sV','-O','-A','-v'], a:0, exp:'-sV probes open ports to identify the service and its version.'},
+    {type:'mc', q:'Which Nmap flag scans all 65535 TCP ports instead of the default top 1000?',
+     opts:['-p 1000','-p-','-F','-top-ports 65535'], a:1, exp:'-p- expands the scan to the full port range, 1-65535.'},
+    {type:'mc', q:'What does the Nmap -A flag enable?',
+     opts:['Aggressive scan: OS detection, version detection, script scanning and traceroute together','ARP-only scanning','A silent/stealth mode','Nothing, it is not a real flag'], a:0,
+     exp:'-A bundles several intensive detection features into one flag — useful but noisier and slower.'},
+    {type:'mc', q:'What is the purpose of Nmap\'s default scripting engine (NSE), invoked with --script?',
+     opts:['To compile Nmap from source','To run additional detection/enumeration scripts against discovered ports and services','To encrypt scan output','To schedule scans for later'], a:1,
+     exp:'NSE scripts extend Nmap with extra checks — e.g. grabbing banners, testing for known misconfigurations, enumerating shares.'},
+    {type:'mc', q:'What does dirb primarily do?',
+     opts:['Captures network packets','Brute-forces a web server for hidden directories and files using a wordlist','Cracks password hashes','Scans for open TCP ports'], a:1,
+     exp:'dirb sends requests built from a wordlist against a target URL to discover content that is not linked anywhere on the site.'},
+    {type:'mc', q:'In a typical dirb command, what is the second argument after the target URL?',
+     opts:['The output filename, always required','The path to a wordlist file','The target\'s IP address','The HTTP method to use'], a:1,
+     exp:'dirb <url> <wordlist> — the wordlist supplies the list of paths dirb will try.'},
+    {type:'mc', q:'Which dirb option lets you specify a custom list of HTTP status codes to ignore in results?',
+     opts:['-N','-w','-r','-S'], a:0, exp:'-N <code list> tells dirb not to report those response codes, reducing noise from predictable 403/404-style responses.'},
+    {type:'mc', q:'Why would a tester run dirb with the -X flag (extension list)?',
+     opts:['To skip SSL verification','To also try each wordlist entry with specific file extensions, e.g. .php or .bak','To limit scan speed','To scan multiple hosts at once'], a:1,
+     exp:'-X .php,.bak appends those extensions to each wordlist word, catching files like config.php or backup.bak that a bare directory guess would miss.'},
+    {type:'mc', q:'If dirb finds a path that returns a 403 status code, what does that typically mean?',
+     opts:['The path does not exist at all','The path exists but access to it is forbidden','The server is down','The wordlist is corrupted'], a:1,
+     exp:'403 Forbidden usually means the resource exists on the server but the client is not permitted to view it as requested.'},
+    {type:'cmd', q:'Write the Nmap command to run a service-version scan against a host at 10.10.10.5.',
      check:/^nmap\s+-sV\s+10\.10\.10\.5$/, exp:'nmap -sV 10.10.10.5 probes open ports to determine service and version info.'},
-    {type:'cmd', q:'Write the Linux command to scan all 65535 TCP ports on a target at 10.10.10.5.',
+    {type:'cmd', q:'Write the Nmap command to scan all 65535 TCP ports on a target at 10.10.10.5.',
      check:/^nmap\s+-p-\s+10\.10\.10\.5$/, exp:'nmap -p- 10.10.10.5 scans the full TCP port range instead of the default top 1000.'},
-    {type:'cmd', q:'Write the Linux command to show your current user and group identity.',
-     check:/^id\s*$/, exp:'id prints the effective user ID, group ID, and group memberships — a standard first recon command after gaining a shell.'},
-    {type:'cmd', q:'Write the Linux command to list all SUID binaries on the filesystem, suppressing permission-denied errors.',
-     check:/^find\s+\/\s+-perm\s+-4000\s+2>\/dev\/null$/, exp:'find / -perm -4000 2>/dev/null hunts for SUID binaries, a common privilege-escalation check.'},
-    {type:'cmd', q:'Write the Linux command to grab the HTTP response headers only (no body) from http://target.local.',
-     check:/^curl\s+-I\s+http:\/\/target\.local$/, exp:'curl -I sends a HEAD-style request and prints just the headers — used for banner grabbing/fingerprinting.'},
-    {type:'cmd', q:'Write the Linux command to search recursively for the string "password" inside all files under /var/www.',
-     check:/^grep\s+-r\s+"?password"?\s+\/var\/www$/, exp:'grep -r "password" /var/www recursively searches files for that string, useful when hunting for hardcoded credentials.'},
-    {type:'cmd', q:'Write the Linux command to list all currently listening TCP/UDP ports along with the owning process.',
-     check:/^(sudo\s+)?(ss|netstat)\s+-(tulpn|tlnp|lntp|lnpt)\b/, exp:'ss -tulpn (or netstat -tulpn) shows listening sockets and the process bound to each — key for service enumeration.'},
-    {type:'cmd', q:'Write the Linux command to display the contents of /etc/passwd.',
-     check:/^cat\s+\/etc\/passwd$/, exp:'cat /etc/passwd lists system accounts — a routine enumeration step after local access.'}
+    {type:'cmd', q:'Write the Nmap command to run an aggressive scan (OS detection, versions, scripts, traceroute) against 10.10.10.5.',
+     check:/^nmap\s+-A\s+10\.10\.10\.5$/, exp:'nmap -A 10.10.10.5 bundles OS/version/script/traceroute detection into one pass.'},
+    {type:'cmd', q:'Write the Nmap command to scan only ports 80 and 443 on 10.10.10.5.',
+     check:/^nmap\s+-p\s*80,443\s+10\.10\.10\.5$/, exp:'nmap -p 80,443 10.10.10.5 limits the scan to a specific comma-separated port list.'},
+    {type:'cmd', q:'Write the basic dirb command to scan http://10.10.10.5 using the default wordlist.',
+     check:/^dirb\s+http:\/\/10\.10\.10\.5\/?$/, exp:'dirb http://10.10.10.5 runs with dirb\'s built-in default wordlist when none is specified.'},
+    {type:'cmd', q:'Write the dirb command to scan http://10.10.10.5 using the wordlist at /usr/share/wordlists/dirb/common.txt.',
+     check:/^dirb\s+http:\/\/10\.10\.10\.5\/?\s+\/usr\/share\/wordlists\/dirb\/common\.txt$/,
+     exp:'dirb <url> <wordlist-path> tells dirb explicitly which wordlist to brute-force with.'},
+    {type:'cmd', q:'Write the dirb command to scan http://10.10.10.5 and also try the .php and .bak extensions on every word.',
+     check:/^dirb\s+http:\/\/10\.10\.10\.5\/?\s+-X\s+\.php,\.bak$/,
+     exp:'dirb http://10.10.10.5 -X .php,.bak appends those extensions to each wordlist entry during the brute force.'}
   ];
 
   const PASS_PCT = 70;
